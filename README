@@ -1,0 +1,33 @@
+* Syntax for entering the sequents
+
+- Examples:
+
+"everyone : (e.e -> X.t) -> X.t, love : e.e -> s.e -> l.t, someone : (s.e -> Y.t) -> Y.t => l.t"
+
+"reza : <>r.e, not : b.t -> b.t, believe : <>r.e -> <>i.t -> <>b.t, jesus : <>j1.e, is : j1.e -> j2.e -> i.t, jesus : <>j2.e => <>b.t"
+
+"a.a -> b.b, a.a => b.b" (this is just to show that you can also avoid specifying the meaning terms, the theorem prover will generate a variable for you)
+
+- BNF 
+
+Literals are indicated by double quotes. White spaces are irrelevant, put as many as you like.
+
+Sequent := LHS "=>" RHS
+LHS := "" | Formula "," LHS
+RHS := SimpleFormula
+Formula := DecoratedFormula | SimpleFormula
+DecoratedFormula := Constant ":" SimpleFormula
+Constant := [a..ZA..Z0..9]+
+SimpleFormula := ["("] (Atom | Variable | Implication | Monad) [")"]
+Atom := [a..z][a..zA..Z0..9]* "." Type
+Type := [a..zA..Z0..9]+
+Variable := [A..Z][a..zA..Z0..9] "." Type
+Implication := SimpleFormula "->" SimpleFormula
+Monad := "<>" SimpleFormula
+
+- Notes: 
+. Parentheses are always optional
+. Types are only specified on atoms and variables, the type of complex formulae is inferred
+. "<>" binds tighter than "->", so "<>a.a -> b.b" is equivalent to "(<>a.a) -> b.b"
+. "->" is right associative, so "a.a -> b.b -> c.c" is equivalent to "a.a -> (b.b -> c.c)"
+. Variables used in different formulae should be given different names (unless you want to create a dependency between the instantiation of a variable in one formula with the one in another).
