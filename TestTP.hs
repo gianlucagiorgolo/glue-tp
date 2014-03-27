@@ -112,6 +112,7 @@ tests = TestList [ testGenerateFormualae
                  , testCollectVars
                  , testAlphaEquivalent 
                  , testEtaReduce 
+                 , testBetaReduce
                  , testMonadReduce
                  , testEquivalentDecoratedSequent 
                  , testMixMap 
@@ -196,6 +197,19 @@ testEtaReduce = "etaReduce" ~: TestList
    , etaReduce (V 1) ~?= (V 1)
    , etaReduce (App (V 2) (V 1)) ~?= (App (V 2) (V 1))
    , etaReduce (Lambda (V 1) (App (Lambda (V 2) (App (V 3) (V 2))) (V 1))) ~?= (V 3) ]
+
+testBetaReduce = "betaReduce" ~: TestList
+   [ betaReduce (V 1) ~?= (V 1) 
+   , betaReduce (Lambda (V 1) (V 1)) ~?= (Lambda (V 1) (V 1))
+   , betaReduce (App (Lambda (V 1) (V 1)) (V 2)) ~?= (V 2)
+   , betaReduce (App (Lambda (V 1) (V 2)) (V 3)) ~?= (V 2) 
+   , betaReduce (App (Lambda (V 1) (Pair (V 1) (V 1))) (V 2)) ~?= (Pair (V 2) (V 2)) 
+   , betaReduce (App (Lambda (V 1) (Pair (V 1) (V 3))) (V 2)) ~?= (Pair (V 2) (V 3)) 
+   , betaReduce (App (Lambda (V 1) ((V 1) :*: (V 3))) (V 2)) ~?= ((V 2) :*: (V 3)) 
+   , betaReduce (App (Lambda (V 1) (Eta (V 1))) (V 2)) ~?= (Eta (V 2))
+   , betaReduce (App (Lambda (V 1) (FirstProjection (V 1))) (V 2)) ~?= (FirstProjection (V 2))
+   , betaReduce (App (Lambda (V 1) (SecondProjection (V 1))) (V 2)) ~?= (SecondProjection (V 2)) ]
+   
 
 testMonadReduce = "monadReduce" ~: TestList
    [ monadReduce ((Eta (V 1)) :*: (V 2)) ~?= (App (V 2) (V 1))

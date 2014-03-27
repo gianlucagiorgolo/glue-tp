@@ -15,6 +15,11 @@ startState :: S
 startState = S (-1) Map.empty
 
 -- Util
+
+-- |The 'split' function splits a set (encoded as a list) in all possible ways.
+--
+-- >>> split [1,2]
+-- [([],[1,2]),([1],[2]),([2],[1]),([1,2],[])]
 split :: [a] -> [([a],[a])]
 split [] = [([],[])]
 split [a] = [([],[a]),([a],[])]
@@ -23,6 +28,7 @@ split (a : as) = left ++ right where
     right = [(l, a : r) | (l,r) <- rec]
     rec = split as
 
+-- |Returns the current state integer and decrease the state by one.
 getAndDec :: NonDeterministicState S Int 
 getAndDec = do
     s <- get
@@ -30,6 +36,7 @@ getAndDec = do
     modify (\x -> x{counter = (i-1)})
     return i
 
+-- |Takes a sequent of formulae and generates fresh variables for each formula, wrapping it in a non-deterministic state
 toDecorated :: Sequent -> NonDeterministicState S DecoratedSequent
 toDecorated (gamma,f) = do
   aux <- return $ \x -> do
@@ -40,6 +47,7 @@ toDecorated (gamma,f) = do
   f' <- aux f
   return (gamma',f')
 
+-- |Takes a decorated sequent and generates fresh variables for each formula, wrapping it in a non-deterministic state and returning a map from the new variables to the original constant terms
 toDecoratedWithConstants :: ([(LambdaTerm,Formula)],Formula) -> NonDeterministicState S (DecoratedSequent,Map Int LambdaTerm)
 toDecoratedWithConstants (gamma,f) = do
   aux <- return $ \(c,x) -> do
@@ -52,7 +60,8 @@ toDecoratedWithConstants (gamma,f) = do
     j <- getAndDec
     return $ DF i (V j) f
   return ((map fst gamma',f'),Map.fromList $ map snd gamma')
-                             
+                 
+-- |Associates two formulae in the variable-formula binding map in the state            
 associate :: Formula -> Formula -> NonDeterministicState S ()
 associate f g = do
   s <- get
@@ -60,6 +69,7 @@ associate f g = do
   modify (\x -> x{vars = Map.insert f g m})
   return ()
 
+-- |Looks up the binding of a formula in the variable-formula binding map of the state
 getBinding :: Formula -> NonDeterministicState S (Maybe Formula)
 getBinding f = do
   s <- get
@@ -70,6 +80,7 @@ getBinding f = do
     Just v@(Var _ _) -> getBinding v
     Just f -> return $ Just f
 
+-- |Tries to unify to formulae: returns 'True' in case of success (and associate the unified formulae) and 'False' otherwise (without changing the state)
 unify :: Formula -> Formula -> NonDeterministicState S Bool
 unify v1@(Var _ t1) v2@(Var _ t2) 
     | t1 == t2 = 
@@ -99,6 +110,7 @@ unify v@(Var _ t) f
 unify f v@(Var _ _) = unify v f
 unify f g = return $ f == g
 
+-- |Returns all the proofs for a given sequent
 proofs :: DecoratedSequent -> NonDeterministicState S (BinTree DecoratedSequent)
 proofs s@(gamma,f) = do
   every $ map (\r -> r s) [iR,mR,tR] ++ map (\(r,g) -> r g (delete g gamma,f)) 
@@ -106,6 +118,7 @@ proofs s@(gamma,f) = do
                                          , g <- gamma]
   
 
+-- |The identity rule
 i :: DecoratedFormula -> DecoratedSequent -> NonDeterministicState S (BinTree DecoratedSequent)
 i a ([],a') = do
   res <- unify (formula a) (formula a')
@@ -118,6 +131,7 @@ i a ([],a') = do
                               , DF (identifier a') x (formula a'))
 i _ _ = failure
 
+-- |The left implication rule
 iL :: DecoratedFormula -> DecoratedSequent -> NonDeterministicState S (BinTree DecoratedSequent)
 iL f@(DF _ _ (I a b ty)) (gamma,c) = do
   a_id <- getAndDec
@@ -139,6 +153,7 @@ iL f@(DF _ _ (I a b ty)) (gamma,c) = do
                          ,DF (identifier c') (sub (App y (term a')) (term b') (term c')) (formula c')) r
 iL _ _ = failure
 
+-- |The left diamond rule
 mL :: DecoratedFormula -> DecoratedSequent -> NonDeterministicState S (BinTree DecoratedSequent)
 mL ma@(DF _ y (M a _)) (gamma, f@(DF j _ (M b tyb))) = do
   id_a <- getAndDec
@@ -150,6 +165,7 @@ mL ma@(DF _ y (M a _)) (gamma, f@(DF j _ (M b tyb))) = do
   return $ Unary MonL (ma : gamma, DF j (y :*: (Lambda (term a) (term mb))) (M b tyb)) c
 mL _ _ = failure
 
+-- |The left tensor rule
 tL :: DecoratedFormula -> DecoratedSequent -> NonDeterministicState S (BinTree DecoratedSequent)
 tL ab@(DF _ y (P a b _)) (gamma, c) = do
   a_id <- getAndDec
@@ -170,6 +186,7 @@ tL ab@(DF _ y (P a b _)) (gamma, c) = do
                                                 (formula c)) child
 tL _ _ = failure
 
+-- |The right implication rule
 iR :: DecoratedSequent -> NonDeterministicState S (BinTree DecoratedSequent)
 iR (gamma, DF i _ f@(I a b _)) = do
   a_id <- getAndDec
@@ -183,6 +200,7 @@ iR (gamma, DF i _ f@(I a b _)) = do
   return $ Unary ImpR (gamma, DF i (Lambda (term a) (term b)) f) c
 iR _ = failure
 
+-- |The right diamond rule
 mR :: DecoratedSequent -> NonDeterministicState S (BinTree DecoratedSequent)
 mR (gamma,DF i _ ma@(M a _)) = do
   a_id <- getAndDec
@@ -192,6 +210,7 @@ mR (gamma,DF i _ ma@(M a _)) = do
   return $ Unary MonR (gamma,DF i (Eta (term a)) ma) c
 mR _ = failure
 
+-- |The right tensor rule
 tR :: DecoratedSequent -> NonDeterministicState S (BinTree DecoratedSequent)
 tR (gamma,DF i _ f@(P a b _)) = do
   a_id <- getAndDec
@@ -234,6 +253,7 @@ sub new old (Pair a b) = Pair (sub new old a) (sub new old b)
 sub new old (FirstProjection a) = FirstProjection $ sub new old a
 sub new old (SecondProjection a) = SecondProjection $ sub new old a
 
+-- |Collects all variables from a proof
 collectVars :: BinTree DecoratedSequent -> Set LambdaTerm
 collectVars t = Set.fromList $ foldMap aux t where
   aux = concat . (map f) . (map term) . j
@@ -299,6 +319,9 @@ alphaEquivalent (Lambda (V i) t) (Lambda (V j) u) m = alphaEquivalent t u (Map.i
 alphaEquivalent (App t s) (App d z) m = (alphaEquivalent t d m) && (alphaEquivalent s z m)
 alphaEquivalent (Eta t) (Eta d) m = alphaEquivalent t d m
 alphaEquivalent (t :*: s) (d :*: z) m = (alphaEquivalent t d m) && (alphaEquivalent s z m)
+alphaEquivalent (Pair a b) (Pair a' b') m = alphaEquivalent a a' m && alphaEquivalent b b' m
+alphaEquivalent (FirstProjection a) (FirstProjection b) m = alphaEquivalent a b m
+alphaEquivalent (SecondProjection a) (SecondProjection b) m = alphaEquivalent a b m
 alphaEquivalent _ _ _ = False
 
 -- |This function works only under the assumption that all the formulae in the hypothesis are distinct, otherwise the answer is NO!
@@ -343,7 +366,23 @@ etaReduce (Lambda x t) = let x' = etaReduce x
                                 etaReduce (Lambda x' t')
 
 betaReduce :: LambdaTerm -> LambdaTerm
-betaReduce = id
+betaReduce t = aux t Map.empty where
+   aux c@(C _) _ = c
+   aux v@(V i) m = case Map.lookup i m of
+       Nothing -> v
+       Just t -> t
+   aux (App (Lambda (V i) body) x) m = aux body (Map.insert i x m)
+   aux (App f x) m = let f' = aux f m
+                     in if f == f' then
+                           (App f (aux x m))
+                        else
+                           aux (App f' x) m
+   aux (Lambda x b) m = Lambda (aux x m) (aux b m)
+   aux (Eta t) m = Eta $ aux t m
+   aux (n :*: k) m = (aux n m) :*: (aux k m)
+   aux (Pair a b) m = Pair (aux a m) (aux b m)
+   aux (FirstProjection a) m = FirstProjection $ aux a m
+   aux (SecondProjection a) m = SecondProjection $ aux a m
 
 monadReduce :: LambdaTerm -> LambdaTerm
 monadReduce ((Eta t) :*: u) = App (monadReduce u) (monadReduce t)
