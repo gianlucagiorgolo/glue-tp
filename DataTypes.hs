@@ -1,8 +1,9 @@
 module DataTypes where
 
-import Data.Foldable -- hiding (concat,any,all)
+import Data.Foldable hiding (msum)
 import Data.Map (Map)
 import Data.Monoid
+import Control.Monad.State
 
 data Type = TAtomic String
           | TMonadic Type
@@ -86,3 +87,14 @@ data S = S { counter :: Int
            , vars    :: Map Formula Formula} deriving Show
 
 sanevars = ["x","y","z","w","v","k","h","l","m","n","a","b","c","d","e"]
+
+type NonDeterministicState s a = StateT s [] a
+
+failure :: NonDeterministicState s a
+failure = StateT $ \_ -> []
+
+every :: [NonDeterministicState s a] -> NonDeterministicState s a
+every = msum
+
+evaluateState :: NonDeterministicState s a -> s -> [a]
+evaluateState = evalStateT

@@ -8,7 +8,6 @@ import DataTypes
 import HTML
 import Parser
 import TP
-import NDS
 import Data.Monoid
 import Data.List
 import System.Timeout
