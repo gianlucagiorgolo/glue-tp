@@ -22,7 +22,8 @@ data Env = Env { temp_dir :: FilePath
 
 data Cmd = Seq (Either String (Either Sequent ([(LambdaTerm,Formula)],Formula)))
          | ShowAll
-         | ShowEquiv 
+         | ShowEquiv
+         | SwitchOutput
          | Help
 
 main = do
@@ -38,6 +39,7 @@ parseLine :: String -> Cmd
 parseLine ":all" = ShowAll
 parseLine ":equiv" = ShowEquiv
 parseLine ":help" = Help
+parseLine ":switch_output" = SwitchOutput
 parseLine s = Seq $ parseSequent s
 
 loop env = do
@@ -48,6 +50,15 @@ loop env = do
     Help -> printHelp >> loop env
     ShowAll -> loop $ env{showAll = True}
     ShowEquiv -> loop $ env{showAll = False}
+    SwitchOutput -> do
+      env' <- case cmd env of 
+                Just _ -> return env{cmd=Nothing}
+                Nothing -> do
+                          cmd1 <- findExecutable "pdflatex"
+                          cmd2 <- findExecutable "pdflatex.exe"
+                          cmd <- return $ mplus cmd1 cmd2
+                          return env{cmd=cmd}
+      loop env'
     Seq parse -> case parse of
                    Left s -> do
                               putStrLn s
@@ -60,7 +71,7 @@ loop env = do
                                        printProofsWithConstants s env
                                        loop env
 
-printHelp = putStrLn ":all - shows all derivations\n:equiv - shows only non-equivalent derivations\n:help - shows this message\nSEQUENT - tries to prove the sequent"
+printHelp = putStrLn ":all - shows all derivations\n:equiv - shows only non-equivalent derivations\n:switch_output - switches between pdf and ASCII\n:help - shows this message\nSEQUENT - tries to prove the sequent"
 
 printProofs :: Sequent -> Env -> IO ()
 printProofs s env = do
