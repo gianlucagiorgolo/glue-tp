@@ -6,7 +6,6 @@ import DataTypes
 import XHTML
 import Parser
 import TP
-import NDS
 import Data.Monoid
 import Data.List
 import System.Timeout
@@ -26,13 +25,13 @@ cgiMain = do
                    Right s -> printProofsWithConstants s
 
 printProofs s = do
-  ps <- liftIO $ timeout 60000000 $ return $ (evalState (toDecorated s >>= \ds -> proofs ds) startState)
+  ps <- liftIO $ timeout 60000000 $ return $ (evaluateState (toDecorated s >>= \ds -> proofs ds) startState)
   case ps of 
     Just ps -> pproofs ps
     Nothing -> output $ renderHtml $ pageTemplate $ p << toHtml "This is taking too long..."
 
 printProofsWithConstants s = do
-  ps <- liftIO $ timeout 60000000 $ return $ (evalState (toDecoratedWithConstants s >>= \(ds,m) -> proofs ds >>= \p -> return $ replaceWithConstants p m) startState)
+  ps <- liftIO $ timeout 60000000 $ return $ (evaluateState (toDecoratedWithConstants s >>= \(ds,m) -> proofs ds >>= \p -> return $ replaceWithConstants p m) startState)
   case ps of 
     Just ps -> pproofs ps
     Nothing -> output $ renderHtml $ pageTemplate $ p << toHtml "This is taking too long..."

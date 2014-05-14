@@ -12,7 +12,6 @@ import Control.Monad
 import TP
 import System.Exit
 import Parser (parseSequent)
-import NDS
 import DataTypes
 
 -- Test stuff
@@ -99,7 +98,7 @@ broofs s = do
   ds <- toDecorated s
   proofs ds
 
-kompress ps = compress (evalState ps startState)
+kompress ps = compress (evaluateState ps startState)
 
 -- HUnit
 

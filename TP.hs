@@ -8,7 +8,7 @@ import Data.Maybe
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Foldable hiding (concat,any,all)
-import NDS
+import Control.Monad.State
 import DataTypes
 
 startState :: S

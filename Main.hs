@@ -3,7 +3,6 @@ module Main where
 import Latex
 import Parser
 import System.IO
-import NDS
 import System.Cmd
 import TP
 import qualified Data.Map as Map
@@ -75,12 +74,12 @@ printHelp = putStrLn ":all - shows all derivations\n:equiv - shows only non-equi
 
 printProofs :: Sequent -> Env -> IO ()
 printProofs s env = do
-  ps <- return $ (evalState (toDecorated s >>= \ds -> proofs ds) startState)
+  ps <- return $ (evaluateState (toDecorated s >>= \ds -> proofs ds) startState)
   pproofs env ps
 
 printProofsWithConstants :: ([(LambdaTerm,Formula)],Formula) -> Env -> IO ()
 printProofsWithConstants s env = do
-  ps <- return $ (evalState (toDecoratedWithConstants s >>= \(ds,m) -> proofs ds >>= \p -> return $ replaceWithConstants p m) startState)
+  ps <- return $ (evaluateState (toDecoratedWithConstants s >>= \(ds,m) -> proofs ds >>= \p -> return $ replaceWithConstants p m) startState)
   pproofs env ps
 
 printReading :: BinTree DecoratedSequent -> IO ()
@@ -121,7 +120,7 @@ printStates = mapM_ printState
 
 simpleprintProofs :: Sequent -> FilePath -> IO ()
 simpleprintProofs s fp = do
-  ps <- return $ (evalState (toDecorated s >>= \ds -> proofs ds) startState)
+  ps <- return $ (evaluateState (toDecorated s >>= \ds -> proofs ds) startState)
   ps <- return $ nubBy (\x y -> equivalentDecoratedSequent (getVal x) (getVal y)) ps
   body <- return $ concat $ map (\x -> "\\begin{center}" ++ simpleproof2tex x ++ "\\DisplayProof\\end{center}\n") ps
   doc <- return $ "\\documentclass{article}" ++ texheader ++ "\\begin{document}" ++ body ++ "\\end{document}"
