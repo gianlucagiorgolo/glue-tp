@@ -4,6 +4,9 @@ import Data.Foldable hiding (msum)
 import Data.Map (Map)
 import Data.Monoid
 import Control.Monad.State
+import Data.Traversable
+import Data.Functor
+import Control.Applicative
 
 data Type = TAtomic String
           | TMonadic Type
@@ -36,11 +39,15 @@ instance Foldable BinTree where
   foldMap f (Leaf _ a) = f a
   foldMap f (Unary _ a c) = f a `mappend` foldMap f c
   foldMap f (Branch _ l a r) = foldMap f l `mappend` f a `mappend` foldMap f r                     
-
 instance Functor BinTree where
   fmap f (Leaf l a) = Leaf l (f a)
   fmap f (Unary l a c) = Unary l (f a) (fmap f c)
   fmap f (Branch lab l a r) = Branch lab (fmap f l) (f a) (fmap f r)
+
+instance Traversable BinTree where
+  traverse f (Leaf l a) = (Leaf l) <$> f a
+  traverse f (Unary l a c) = (Unary l) <$> f a <*> traverse f c
+  traverse f (Branch lab l a r) = (Branch lab) <$> traverse f l <*> f a <*> traverse f r
 
 getVal :: BinTree a -> a
 getVal (Leaf _ a) = a
