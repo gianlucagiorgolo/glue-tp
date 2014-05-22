@@ -105,3 +105,15 @@ every = msum
 
 evaluateState :: NonDeterministicState s a -> s -> [a]
 evaluateState = evalStateT
+
+-- |Translates a lambda term into an Haskell expression. The output is not meant to be pretty. We could have used Language.Haskell.Syntax but it seems overkill for our purposes
+toHaskell :: LambdaTerm -> String
+toHaskell (V i) = "__v" ++ (show i) ++ "__"
+toHaskell (C s) = s
+toHaskell (Lambda x t) = "(\\ " ++ toHaskell x ++ " -> " ++ toHaskell t ++ ")"
+toHaskell (App f x) = "(" ++ toHaskell f ++ " " ++ toHaskell x ++ ")"
+toHaskell (Pair t u) = "(" ++ toHaskell t ++ "," ++ toHaskell u ++ ")"
+toHaskell (FirstProjection p) = "(fst " ++ toHaskell p ++ ")"
+toHaskell (SecondProjection p) = "(snd " ++ toHaskell p ++ ")"
+toHaskell (Eta t) = "(return " ++ toHaskell t ++ ")"
+toHaskell (m :*: k) = "(" ++ toHaskell m ++ " >>= " ++ toHaskell k ++ ")"
