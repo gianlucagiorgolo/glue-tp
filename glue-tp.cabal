@@ -16,7 +16,7 @@ Synopsis:            Theorem prover for monadic lambda calculus - Meant for ling
 -- Description:         
 
 -- The license under which the package is released.
-License:             GPL
+License:             MIT
 
 -- The file containing the license text.
 License-file:        LICENSE
