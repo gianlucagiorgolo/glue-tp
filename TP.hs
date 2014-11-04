@@ -71,14 +71,17 @@ associate f g = do
 
 -- |Looks up the binding of a formula in the variable-formula binding map of the state
 getBinding :: Formula -> NonDeterministicState S (Maybe Formula)
-getBinding f = do
-  s <- get
-  m <- return $ vars s
-  res <- return $ Map.lookup f m
-  case res of 
-    Nothing -> return Nothing
-    Just v@(Var _ _) -> getBinding v
-    Just f -> return $ Just f
+getBinding f = aux f [f] where
+  aux f vs = do
+   s <- get
+   m <- return $ vars s
+   res <- return $ Map.lookup f m
+   case res of 
+     Nothing -> return Nothing
+     Just v@(Var _ _) -> case Data.List.elem v vs of
+                           False -> aux v (v : vs)
+                           True -> return $ Just f
+     Just f -> return $ Just f
 
 -- |Tries to unify to formulae: returns 'True' in case of success (and associate the unified formulae) and 'False' otherwise (without changing the state)
 unify :: Formula -> Formula -> NonDeterministicState S Bool
