@@ -11,14 +11,14 @@ proof2tex (Unary lab s t) = proof2tex t ++ lab2tex lab ++ "\\UnaryInfC{$" ++ dec
 proof2tex (Branch lab l s r) = proof2tex l ++ proof2tex r ++ lab2tex lab ++ "\\BinaryInfC{$" ++ decoratedSeq2tex s ++ "$}\n"
 
 lab2tex :: Label -> String
-lab2tex Id = "\\RightLabel{$Id$}"
+lab2tex Id = "\\RightLabel{$id$}"
 lab2tex ImpL = "\\RightLabel{$\\multimap L$}"
 lab2tex ImpR = "\\RightLabel{$\\multimap R$}"
 lab2tex MonL = "\\RightLabel{$\\lozenge L$}"
 lab2tex MonR = "\\RightLabel{$\\lozenge R$}"
 lab2tex TensL = "\\RightLabel{$\\otimes L$}"
 lab2tex TensR = "\\RightLabel{$\\otimes R$}"
-                
+
 lambda2tex :: LambdaTerm -> String
 lambda2tex (C c) = "\\mathbf{" ++ c ++ "}"
 lambda2tex (V n) | n < length sanevars && n >= 0 = sanevars !! n
@@ -34,13 +34,13 @@ lambda2tex (FirstProjection a) = "\\pi_{1}(" ++ lambda2tex a ++ ")"
 lambda2tex (SecondProjection a) = "\\pi_{2}(" ++ lambda2tex a ++ ")"
 
 decoratedSeq2tex :: DecoratedSequent -> String
-decoratedSeq2tex (gamma,c) = left ++ "\\Rightarrow " ++ f c where
-    left = intercalate "," $ map f gamma
-    f (DF _ lt f) = lambda2tex lt ++ ":" ++ formula2latex f
+decoratedSeq2tex (gamma,c) = left ++ "\\vdash " ++ f c where
+    left = intercalate ", " $ map f gamma
+    f (DF _ lt f) = lambda2tex lt ++ " : " ++ formula2latex f
 
 texifySequent :: DecoratedSequent -> String
-texifySequent (gamma,c) = left ++ "\\Rightarrow " ++ formula2latex (formula c) where
-    left = intercalate "," $ map (formula2latex . formula) gamma
+texifySequent (gamma,c) = left ++ "\\vdash " ++ formula2latex (formula c) where
+    left = intercalate ", " $ map (formula2latex . formula) gamma
 
 simpleproof2tex :: BinTree DecoratedSequent -> String
 simpleproof2tex (Leaf lab s) = "\\AxiomC{}" ++ lab2tex lab ++ "\\UnaryInfC{$" ++ texifySequent s ++ "$}\n"
@@ -62,6 +62,4 @@ formula2latex (I f g _) = "(" ++ formula2latex f ++ ") \\multimap " ++ formula2l
 formula2latex (P (Atom a _) f _) = a ++ " \\otimes " ++ formula2latex f
 formula2latex (P (Var a _) f _) = a ++ " \\otimes " ++ formula2latex f
 formula2latex (P d@(M _ _) f _) = formula2latex d ++ " \\otimes " ++ formula2latex f
-formula2latex (P f g _) = "(" ++ formula2latex f ++ ") \\otimes " ++ formula2latex g                        
-
-
+formula2latex (P f g _) = "(" ++ formula2latex f ++ ") \\otimes " ++ formula2latex g
