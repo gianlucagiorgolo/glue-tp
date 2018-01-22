@@ -29,7 +29,7 @@ split (a : as) = left ++ right where
     rec = split as
 
 -- |Returns the current state integer and decrease the state by one.
-getAndDec :: NonDeterministicState S Int 
+getAndDec :: NonDeterministicState S Int
 getAndDec = do
     s <- get
     i <- return $ counter s
@@ -60,8 +60,8 @@ toDecoratedWithConstants (gamma,f) = do
     j <- getAndDec
     return $ DF i (V j) f
   return ((map fst gamma',f'),Map.fromList $ map snd gamma')
-                 
--- |Associates two formulae in the variable-formula binding map in the state            
+
+-- |Associates two formulae in the variable-formula binding map in the state
 associate :: Formula -> Formula -> NonDeterministicState S ()
 associate f g = do
   s <- get
@@ -76,17 +76,17 @@ getBinding f = aux f [f] where
    s <- get
    m <- return $ vars s
    res <- return $ Map.lookup f m
-   case res of 
+   case res of
      Nothing -> return Nothing
-     Just v@(Var _ _) -> case Data.List.elem v vs of
+     Just v@(Var _ _ _) -> case Data.List.elem v vs of
                            False -> aux v (v : vs)
                            True -> return $ Just f
      Just f -> return $ Just f
 
 -- |Tries to unify to formulae: returns 'True' in case of success (and associate the unified formulae) and 'False' otherwise (without changing the state)
 unify :: Formula -> Formula -> NonDeterministicState S Bool
-unify v1@(Var _ t1) v2@(Var _ t2) 
-    | t1 == t2 = 
+unify v1@(Var _ t1 _) v2@(Var _ t2 _)
+    | t1 == t2 =
         do
           binding1 <- getBinding v1
           binding2 <- getBinding v2
@@ -100,8 +100,8 @@ unify v1@(Var _ t1) v2@(Var _ t2)
                           return True
                         Just f -> return $ f == g
     | otherwise = return False
-unify v@(Var _ t) f 
-    | t == (getType f) = 
+unify v@(Var _ t _) f
+    | t == (getType f) =
         do
           binding <- getBinding v
           case binding of
@@ -110,20 +110,20 @@ unify v@(Var _ t) f
               return True
             Just g -> return $ g == f
     | otherwise = return False
-unify f v@(Var _ _) = unify v f
+unify f v@(Var _ _ _) = unify v f
 unify f g = return $ f == g
 
 -- |Returns all the proofs for a given sequent
 proofs :: DecoratedSequent -> NonDeterministicState S (BinTree DecoratedSequent)
 proofs s@(gamma,f) = do
-  every $ map (\r -> r s) [iR,mR,tR] ++ map (\(r,g) -> r g (delete g gamma,f)) 
+  every $ map (\r -> r s) [iR,mR,tR] ++ map (\(r,g) -> r g (delete g gamma,f))
                                          [(r,g) | r <- [i,iL,mL,tL]
                                          , g <- gamma]
-  
+
 
 -- |The identity rule
 i :: DecoratedFormula -> DecoratedSequent -> NonDeterministicState S (BinTree DecoratedSequent)
-i a ([],a') = do
+i a (hyp,a') | not $ any isLinear (map formula hyp) = do
   res <- unify (formula a) (formula a')
   case res of
     False -> failure
@@ -132,17 +132,18 @@ i a ([],a') = do
              x <- return $ V i
              return $ Leaf Id ([DF (identifier a) x (formula a)]
                               , DF (identifier a') x (formula a'))
+             | otherwise = failure
 i _ _ = failure
 
 -- |The left implication rule
 iL :: DecoratedFormula -> DecoratedSequent -> NonDeterministicState S (BinTree DecoratedSequent)
-iL f@(DF _ _ (I a b ty)) (gamma,c) = do
+iL f@(DF _ _ (I a b ty lin)) (gamma,c) = do
   a_id <- getAndDec
   b_id <- getAndDec
   t <- getAndDec >>= \i -> return $ V i
   x <- getAndDec >>= \j -> return $ V j
   splits <- return $ split gamma
-  proveChildren <- return $ \(g,g') -> do 
+  proveChildren <- return $ \(g,g') -> do
     l <- proofs (g,DF a_id t a)
     r <- proofs (DF b_id x b : g',c)
     return (l,r)
@@ -152,25 +153,26 @@ iL f@(DF _ _ (I a b ty)) (gamma,c) = do
   b' <- return $ lookupFormula b_id gamma_with_b
   gamma <- return $ delete b' gamma_with_b
   y <- getAndDec >>= \i -> return $ V i
-  return $ Branch ImpL l (DF (identifier f) y (I a b ty) : gamma `union` delta
+  return $ Branch ImpL l (DF (identifier f) y (I a b ty lin) : gamma `union` delta
                          ,DF (identifier c') (sub (App y (term a')) (term b') (term c')) (formula c')) r
 iL _ _ = failure
 
 -- |The left diamond rule
 mL :: DecoratedFormula -> DecoratedSequent -> NonDeterministicState S (BinTree DecoratedSequent)
-mL ma@(DF _ y (M a _)) (gamma, f@(DF j _ (M b tyb))) = do
+mL ma@(DF _ y (M a m1 _ _)) (gamma, f@(DF j _ (M b m2 tyb lin))) | m1 == m2 = do
   id_a <- getAndDec
   x <- getAndDec >>= \i -> return $ V i
   c <- proofs (DF id_a x a : gamma, f)
   (gamma_and_a,mb) <- return $ getVal c
   a <- return $ lookupFormula id_a gamma_and_a
   gamma <- return $ delete a gamma_and_a
-  return $ Unary MonL (ma : gamma, DF j (y :*: (Lambda (term a) (term mb))) (M b tyb)) c
+  return $ Unary MonL (ma : gamma, DF j (y :*: (Lambda (term a) (term mb))) (M b m2 tyb lin)) c
+                                                                 | otherwise = failure
 mL _ _ = failure
 
 -- |The left tensor rule
 tL :: DecoratedFormula -> DecoratedSequent -> NonDeterministicState S (BinTree DecoratedSequent)
-tL ab@(DF _ y (P a b _)) (gamma, c) = do
+tL ab@(DF _ y (P a b _ _)) (gamma, c) = do
   a_id <- getAndDec
   b_id <- getAndDec
   f <- getAndDec >>= \i -> return $ V i
@@ -191,7 +193,7 @@ tL _ _ = failure
 
 -- |The right implication rule
 iR :: DecoratedSequent -> NonDeterministicState S (BinTree DecoratedSequent)
-iR (gamma, DF i _ f@(I a b _)) = do
+iR (gamma, DF i _ f@(I a b _ _)) = do
   a_id <- getAndDec
   b_id <- getAndDec
   x <- getAndDec >>= \i -> return $ V i
@@ -205,7 +207,7 @@ iR _ = failure
 
 -- |The right diamond rule
 mR :: DecoratedSequent -> NonDeterministicState S (BinTree DecoratedSequent)
-mR (gamma,DF i _ ma@(M a _)) = do
+mR (gamma,DF i _ ma@(M a _ _ _)) = do
   a_id <- getAndDec
   x <- getAndDec >>= \i -> return $ V i
   c <- proofs (gamma,DF a_id x a)
@@ -215,7 +217,7 @@ mR _ = failure
 
 -- |The right tensor rule
 tR :: DecoratedSequent -> NonDeterministicState S (BinTree DecoratedSequent)
-tR (gamma,DF i _ f@(P a b _)) = do
+tR (gamma,DF i _ f@(P a b _ _)) = do
   a_id <- getAndDec
   b_id <- getAndDec
   t <- getAndDec >>= \i -> return $ V i
@@ -232,14 +234,14 @@ tR (gamma,DF i _ f@(P a b _)) = do
 tR _ = failure
 
 -- |This function searches for a formula in a list of formulae by comparing their unique ids.
--- It's meant to be used only by the left implication and left monad rules. 
+-- It's meant to be used only by the left implication and left monad rules.
 -- Raises an error if no formula with the given id is found
 lookupFormula :: Int -> [DecoratedFormula] -> DecoratedFormula
 lookupFormula _ [] = error "This will never be reached by the rules"
 lookupFormula n (f : rest) | n == (identifier f) = f
                            | otherwise = lookupFormula n rest
 
--- |Substitute a term for another inside a third term (should be the substitution of a variable with a term) 
+-- |Substitute a term for another inside a third term (should be the substitution of a variable with a term)
 sub :: LambdaTerm -> -- the new term
        LambdaTerm -> -- the variable/old term
        LambdaTerm -> -- the context
@@ -288,7 +290,7 @@ sanitizeVars t = fmap sanitize t where
   m = zip (map (\(V i) -> i) $ Set.toList $ collectVars t) [0..]
 
 replaceWithConstants :: BinTree DecoratedSequent -> (Map Int LambdaTerm) -> BinTree DecoratedSequent
-replaceWithConstants t m = fmap (\n -> replaceWithConstantsInNode n m) t             
+replaceWithConstants t m = fmap (\n -> replaceWithConstantsInNode n m) t
 
 replaceWithConstantsInNode :: DecoratedSequent -> (Map Int LambdaTerm) -> DecoratedSequent
 replaceWithConstantsInNode (gamma,f) m = new where

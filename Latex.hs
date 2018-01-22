@@ -50,16 +50,16 @@ simpleproof2tex (Branch lab l s r) = simpleproof2tex l ++ simpleproof2tex r ++ l
 
 -- |Texifies a formula (now with smart parentheses!)
 formula2latex :: Formula -> String
-formula2latex (Atom a _) = a
-formula2latex (Var x _) = x
-formula2latex (M (Atom a _) _) = "\\lozenge " ++ a
-formula2latex (M (Var x _) _) = "\\lozenge " ++ x
-formula2latex (M f _) = "\\lozenge (" ++ formula2latex f ++ ")"
-formula2latex (I (Atom a _) f _) = a ++ " \\multimap " ++ formula2latex f
-formula2latex (I (Var a _) f _) = a ++ " \\multimap " ++ formula2latex f
-formula2latex (I d@(M _ _) f _) = formula2latex d ++ " \\multimap " ++ formula2latex f
-formula2latex (I f g _) = "(" ++ formula2latex f ++ ") \\multimap " ++ formula2latex g
-formula2latex (P (Atom a _) f _) = a ++ " \\otimes " ++ formula2latex f
-formula2latex (P (Var a _) f _) = a ++ " \\otimes " ++ formula2latex f
-formula2latex (P d@(M _ _) f _) = formula2latex d ++ " \\otimes " ++ formula2latex f
-formula2latex (P f g _) = "(" ++ formula2latex f ++ ") \\otimes " ++ formula2latex g
+formula2latex (Atom a _ _) = a
+formula2latex (Var x _ _) = x
+formula2latex (M (Atom a _ _) _ _ _) = "\\lozenge " ++ a
+formula2latex (M (Var x _ _) _ _ _) = "\\lozenge " ++ x
+formula2latex (M f _ _ _) = "\\lozenge (" ++ formula2latex f ++ ")"
+formula2latex (I (Atom a _ _) f _ _) = a ++ " \\multimap " ++ formula2latex f
+formula2latex (I (Var a _ _) f _ _) = a ++ " \\multimap " ++ formula2latex f
+formula2latex (I d@(M _ _ _ _) f _ _) = formula2latex d ++ " \\multimap " ++ formula2latex f
+formula2latex (I f g _ _) = "(" ++ formula2latex f ++ ") \\multimap " ++ formula2latex g
+formula2latex (P (Atom a _ _) f _ _) = a ++ " \\otimes " ++ formula2latex f
+formula2latex (P (Var a _ _) f _ _) = a ++ " \\otimes " ++ formula2latex f
+formula2latex (P d@(M _ _ _ _) f _ _) = formula2latex d ++ " \\otimes " ++ formula2latex f
+formula2latex (P f g _ _) = "(" ++ formula2latex f ++ ") \\otimes " ++ formula2latex g

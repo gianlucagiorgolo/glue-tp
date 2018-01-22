@@ -109,12 +109,12 @@ tests = TestList [ testGenerateFormualae
                  , testProofs
                  , testSub
                  , testCollectVars
-                 , testAlphaEquivalent 
-                 , testEtaReduce 
+                 , testAlphaEquivalent
+                 , testEtaReduce
                  , testBetaReduce
                  , testMonadReduce
-                 , testEquivalentDecoratedSequent 
-                 , testMixMap 
+                 , testEquivalentDecoratedSequent
+                 , testMixMap
                  , testParsers ]
 
 testGenerateFormualae = "generateFormulae" ~: TestList
@@ -135,8 +135,8 @@ testMaxDepth = "maxDepth" ~: TestList
 --    , prove ([a],b) ~?= False
 --    , prove ([a :->: b, a],b) ~?= True
 --    , prove ([a :->: c, b],c) ~?= False
---    , prove ([a :->: b, b],b) ~?= False 
---    , prove ([a :->: b, a],b) ~?= True 
+--    , prove ([a :->: b, b],b) ~?= False
+--    , prove ([a :->: b, a],b) ~?= True
 --    , prove ([a :->: b], (M a) :->: (M b)) ~?= True ]
 
 testSplit = "split" ~: TestList
@@ -152,8 +152,8 @@ testProofs = "proofs" ~: TestList
    , kompress (broofs ([a],b)) ~?= False
    , kompress (broofs ([a .->. b, a],b)) ~?= True
    , kompress (broofs ([a .->. c, b],c)) ~?= False
-   , kompress (broofs ([a .->. b, b],b)) ~?= False 
-   , kompress (broofs ([a .->. b, a],b)) ~?= True 
+   , kompress (broofs ([a .->. b, b],b)) ~?= False
+   , kompress (broofs ([a .->. b, a],b)) ~?= True
    , kompress (broofs ([a,b],a .*. b)) ~?= True
    , kompress (broofs ([a .->. b, a, c], b .*. c)) ~?= True
    , kompress (broofs ([a .->. b, a], a .*. b)) ~?= False
@@ -168,7 +168,7 @@ testProofs = "proofs" ~: TestList
    , kompress (broofs ([var "X" "b" .->. a,b],a)) ~?= True
    , kompress (broofs ([a .->. b .->. c, (a .->. (var "X" "c")) .->. (var "X" "c"), (b .->. (var "Y" "c")) .->. (var "Y" "c")],c)) ~?= True ]
 
-testSub = "sub" ~: TestList                 
+testSub = "sub" ~: TestList
    [ sub (V 1) (V 2) (V 3) ~?= V 3
    , sub (V 1) (V 2) (V 2) ~?= V 1
    , sub (V 1) (V 2) (Lambda (V 3) (V 2)) ~?= (Lambda (V 3) (V 1))
@@ -198,21 +198,21 @@ testEtaReduce = "etaReduce" ~: TestList
    , etaReduce (Lambda (V 1) (App (Lambda (V 2) (App (V 3) (V 2))) (V 1))) ~?= (V 3) ]
 
 testBetaReduce = "betaReduce" ~: TestList
-   [ betaReduce (V 1) ~?= (V 1) 
+   [ betaReduce (V 1) ~?= (V 1)
    , betaReduce (Lambda (V 1) (V 1)) ~?= (Lambda (V 1) (V 1))
    , betaReduce (App (Lambda (V 1) (V 1)) (V 2)) ~?= (V 2)
-   , betaReduce (App (Lambda (V 1) (V 2)) (V 3)) ~?= (V 2) 
-   , betaReduce (App (Lambda (V 1) (Pair (V 1) (V 1))) (V 2)) ~?= (Pair (V 2) (V 2)) 
-   , betaReduce (App (Lambda (V 1) (Pair (V 1) (V 3))) (V 2)) ~?= (Pair (V 2) (V 3)) 
-   , betaReduce (App (Lambda (V 1) ((V 1) :*: (V 3))) (V 2)) ~?= ((V 2) :*: (V 3)) 
+   , betaReduce (App (Lambda (V 1) (V 2)) (V 3)) ~?= (V 2)
+   , betaReduce (App (Lambda (V 1) (Pair (V 1) (V 1))) (V 2)) ~?= (Pair (V 2) (V 2))
+   , betaReduce (App (Lambda (V 1) (Pair (V 1) (V 3))) (V 2)) ~?= (Pair (V 2) (V 3))
+   , betaReduce (App (Lambda (V 1) ((V 1) :*: (V 3))) (V 2)) ~?= ((V 2) :*: (V 3))
    , betaReduce (App (Lambda (V 1) (Eta (V 1))) (V 2)) ~?= (Eta (V 2))
    , betaReduce (App (Lambda (V 1) (FirstProjection (V 1))) (V 2)) ~?= (FirstProjection (V 2))
    , betaReduce (App (Lambda (V 1) (SecondProjection (V 1))) (V 2)) ~?= (SecondProjection (V 2)) ]
-   
+
 
 testMonadReduce = "monadReduce" ~: TestList
    [ monadReduce ((Eta (V 1)) :*: (V 2)) ~?= (App (V 2) (V 1))
-   , monadReduce ((V 1) :*: (Lambda (V 2) (Eta (V 2)))) ~?= (V 1) 
+   , monadReduce ((V 1) :*: (Lambda (V 2) (Eta (V 2)))) ~?= (V 1)
    , monadReduce ((V 1) :*: (Lambda (V 2) (Eta (V 3)))) ~?= ((V 1) :*: (Lambda (V 2) (Eta (V 3)))) ]
 
 testEquivalentDecoratedSequent = "equivalentDecoratedSequent" ~: TestList
@@ -223,7 +223,7 @@ testEquivalentDecoratedSequent = "equivalentDecoratedSequent" ~: TestList
    , equivalentDecoratedSequent ([] , DF 1 (V 2) a)
                                 ([] , DF 1 (V 1) a) ~?= False
    , equivalentDecoratedSequent ([] , DF 1 (V 1) b)
-                                ([] , DF 1 (V 1) a) ~?= False 
+                                ([] , DF 1 (V 1) a) ~?= False
    , equivalentDecoratedSequent ([DF 1 (V 1) a], DF 2 (V 1) a)
                                 ([DF 1 (V 2) a], DF 2 (V 2) a) ~?= True
    , equivalentDecoratedSequent ([DF 1 (V 1) a, DF 2 (V 2) b], DF 2 (V 1) a)
@@ -235,20 +235,20 @@ testMixMap = "mixMaps" ~: TestList
    , mixMaps (Map.fromList [(a,1),(b,2)]) (Map.fromList [(a,3),(b,2)]) ~?= Map.fromList [(1,3),(2,2)] ]
 
 testParsers = "Parsers" ~: TestList
-   [ read "a.a" ~?= atom "a" 
+   [ read "a.a" ~?= atom "a"
    , read "A.a" ~?= var "A" "a"
    , read "  A123 . a" ~?= var "A123" "a"
-   , read "    abc123 .abc123 " ~?= atom "abc123" 
-   , read "<>a.a" ~?= mon (atom "a") 
+   , read "    abc123 .abc123 " ~?= atom "abc123"
+   , read "<>a.a" ~?= mon (atom "a")
    , read "a.a -> b.b" ~?= (atom "a") .->. (atom "b")
-   , read "a.a -> b.b -> c.c" ~?= (atom "a") .->. ((atom "b") .->. (atom "c")) 
+   , read "a.a -> b.b -> c.c" ~?= (atom "a") .->. ((atom "b") .->. (atom "c"))
    , read "a.a * b.b * c.c" ~?= (atom "a") .*. ((atom "b") .*. (atom "c"))
-   , read "(a.a)" ~?= atom "a" 
+   , read "(a.a)" ~?= atom "a"
    , read "<> (a.a)" ~?= mon (atom "a")
    , read "(<> a.a)" ~?= mon (atom "a")
-   , read "(a.a -> b.b) -> c.c" ~?= ((atom "a") .->. (atom "b")) .->. (atom "c") 
+   , read "(a.a -> b.b) -> c.c" ~?= ((atom "a") .->. (atom "b")) .->. (atom "c")
    , read "(<> a.a -> b.b) -> <> c.c" ~?= ((mon $ atom "a") .->. (atom "b")) .->. (mon $ atom "c")
-   , read "<><><>a.a -> b.b" ~?= (mon $ mon $ mon $ atom "a") .->. (atom "b") 
+   , read "<><><>a.a -> b.b" ~?= (mon $ mon $ mon $ atom "a") .->. (atom "b")
    , read "<><><>(a.a -> b.b)" ~?= (mon $ mon $ mon $ (atom "a") .->. (atom "b"))
    , parseSequent "a.a -> b.b , c.c , a.a => a.a" ~?= Right (Left (([a .->. b, c , a],a) :: Sequent))
    , parseSequent "f : a.a -> b.b, x : a.a => b.b" ~?= Right (Right ([(C "f", a .->. b) , (C "x", a)],b)) ]
